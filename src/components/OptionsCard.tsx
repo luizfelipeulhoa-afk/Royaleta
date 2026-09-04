@@ -1,101 +1,127 @@
 import { useEffect, useRef, useState } from "react";
-import type { WheelOption } from "../lib/data";
-import { MAX_OPTIONS, MIN_OPTIONS } from "../lib/data";
-import { PlusIcon, XIcon } from "./icons";
+import type { CheerOption } from "../lib/cheer";
+import { isFullOut, MAX_OPTIONS, MIN_OPTIONS } from "../lib/cheer";
+import { MegaphoneIcon, PlusIcon, XIcon } from "./icons";
 
 interface OptionsCardProps {
-  options: WheelOption[];
+  options: CheerOption[];
   disabled: boolean;
   onAdd: (text: string) => void;
   onRemove: (index: number) => void;
 }
 
+/** Card de opções de treino: input + chips coloridos da arena. */
 export default function OptionsCard({ options, disabled, onAdd, onRemove }: OptionsCardProps) {
-  const [text, setText] = useState("");
+  const [value, setValue] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const prevCount = useRef(options.length);
+  const errorTimer = useRef(0);
 
-  /* rola até a última opção quando uma nova é adicionada */
-  useEffect(() => {
-    if (options.length > prevCount.current && scrollRef.current) {
-      requestAnimationFrame(() => {
-        scrollRef.current?.scrollTo({
-          left: scrollRef.current.scrollWidth,
-          behavior: "smooth",
-        });
-      });
-    }
-    prevCount.current = options.length;
-  }, [options.length]);
+  useEffect(() => () => window.clearTimeout(errorTimer.current), []);
 
-  const atLimit = options.length >= MAX_OPTIONS;
-
-  const submit = () => {
-    const value = text.trim();
-    if (!value || atLimit) return;
-    onAdd(value);
-    setText("");
+  const showError = (msg: string) => {
+    setError(msg);
+    window.clearTimeout(errorTimer.current);
+    errorTimer.current = window.setTimeout(() => setError(null), 2400);
   };
 
-  return (
-    <section className="w-full rounded-3xl border border-[#ebf1fa] bg-white p-4 shadow-[8px_12px_22px_rgba(180,195,215,0.3),-6px_-6px_14px_#ffffff]">
-      <header className="mb-2.5 flex items-center justify-between px-1">
-        <h2 className="font-display text-[13px] font-bold uppercase tracking-[0.8px] text-[#314259]">
-          Adicionar opções
-        </h2>
-        <span
-          className={`rounded-full px-2.5 py-0.5 text-[11px] font-extrabold ${
-            atLimit ? "bg-[#ffe3e3] text-[#d64545]" : "bg-well text-mist"
-          }`}
-        >
-          {options.length}/{MAX_OPTIONS}
-        </span>
-      </header>
+  const submit = () => {
+    const text = value.trim();
+    if (!text) return;
+    if (options.length >= MAX_OPTIONS) {
+      showError(`Limite de ${MAX_OPTIONS} rotinas na arena`);
+      return;
+    }
+    onAdd(text);
+    setValue("");
+    inputRef.current?.focus();
+  };
 
-      <div className="mb-2.5 flex items-center gap-2">
-        <button
-          type="button"
-          onClick={submit}
-          disabled={disabled || atLimit || text.trim().length === 0}
-          title="Adicionar opção"
-          className="grid h-[42px] w-[42px] shrink-0 place-items-center rounded-[14px] bg-ink text-white shadow-[0_4px_10px_rgba(43,57,80,0.3)] transition-all duration-150 hover:bg-[#35465f] active:scale-90 disabled:cursor-not-allowed disabled:opacity-45"
-        >
-          <PlusIcon size={20} strokeWidth={2.6} />
-        </button>
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el) el.scrollTo({ left: el.scrollWidth, behavior: "smooth" });
+  }, [options.length]);
+
+  return (
+    <section className="w-full rounded-[22px] border border-white/10 bg-white/5 px-3.5 py-3">
+      <div className="font-display mb-2 flex items-center justify-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[1px] text-fog">
+        <MegaphoneIcon size={13} strokeWidth={2.4} />
+        Opções de treino
+      </div>
+
+      <div className="mb-1.5 flex gap-2">
         <input
+          ref={inputRef}
           type="text"
-          value={text}
+          value={value}
           maxLength={25}
-          disabled={disabled || atLimit}
-          onChange={(e) => setText(e.target.value)}
+          disabled={disabled}
+          onChange={(e) => setValue(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter") submit();
           }}
-          placeholder={atLimit ? "Limite de opções atingido" : "Digite uma nova opção..."}
-          className="h-[42px] min-w-0 flex-1 rounded-[14px] border-[1.5px] border-line bg-[#f9fbfe] px-3.5 text-sm font-semibold text-ink outline-none transition-all placeholder:font-medium placeholder:text-faint focus:border-primary focus:bg-white focus:shadow-[0_0_0_3px_rgba(45,179,141,0.15)] disabled:opacity-60"
+          placeholder="Adicionar nova rotina..."
+          aria-label="Nova rotina"
+          className="h-10 min-w-0 flex-1 rounded-xl border border-white/15 bg-[rgba(15,23,42,0.7)] px-3 text-[13px] font-semibold text-white outline-none transition-colors duration-150 placeholder:text-white/35 focus:border-neon disabled:opacity-60"
         />
+        <button
+          type="button"
+          onClick={submit}
+          disabled={disabled}
+          aria-label="Adicionar rotina"
+          title="Adicionar rotina"
+          className="grid h-10 w-10 shrink-0 cursor-pointer place-items-center rounded-xl bg-gradient-to-br from-punch to-grape text-white shadow-[0_4px_12px_rgba(255,42,133,0.4)] transition-all duration-150 hover:brightness-110 active:scale-90 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <PlusIcon size={18} strokeWidth={2.6} />
+        </button>
       </div>
 
-      <div ref={scrollRef} className="pills-scroll flex gap-2 overflow-x-auto px-0.5 pb-1.5 pt-1">
-        {options.map((opt, idx) => (
-          <span
-            key={`${opt.text}-${idx}`}
-            className="animate-pop inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-white bg-well py-1.5 pl-3 pr-1.5 text-[13px] font-bold text-[#33435c] shadow-[2px_3px_6px_rgba(180,195,215,0.4),-2px_-2px_4px_#ffffff] transition-transform duration-150 hover:-translate-y-0.5"
-          >
-            <span className="h-2 w-2 rounded-full" style={{ background: opt.color }} />
-            <span aria-hidden>{opt.icon}</span>
-            <span>{opt.text}</span>
-            <button
-              type="button"
-              title="Remover"
-              disabled={disabled || options.length <= MIN_OPTIONS}
-              onClick={() => onRemove(idx)}
-              className="grid h-[18px] w-[18px] place-items-center rounded-full bg-[rgba(43,57,80,0.12)] text-ink transition-colors duration-150 hover:bg-[#ff5252] hover:text-white disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-[rgba(43,57,80,0.12)] disabled:hover:text-ink"
+      {error && (
+        <p className="mb-1 text-[11px] font-bold text-punch" role="alert">
+          {error}
+        </p>
+      )}
+
+      <div ref={scrollRef} className="pills-scroll flex gap-1.5 overflow-x-auto py-0.5">
+        {options.map((opt, idx) => {
+          const fo = isFullOut(opt.text);
+          return (
+            <div
+              key={`${opt.text}-${idx}`}
+              className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-2xl border px-2.5 py-1.5 text-xs font-bold text-white transition-all duration-200 ${
+                fo
+                  ? "border-gold/80 bg-gradient-to-r from-[#603813] to-[#b29f00] shadow-[0_0_10px_rgba(255,199,44,0.5)]"
+                  : "border-white/15 bg-[rgba(30,41,69,0.9)]"
+              }`}
             >
-              <XIcon size={10} strokeWidth={3} />
-            </button>
-          </span>
-        ))}
+              <span
+                className="h-2 w-2 shrink-0 rounded-full"
+                style={{ background: opt.color, boxShadow: `0 0 6px ${opt.color}` }}
+              />
+              <span aria-hidden>{opt.icon}</span>
+              <span>{opt.text}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  if (options.length <= MIN_OPTIONS) {
+                    showError("A roleta precisa de pelo menos 2 rotinas!");
+                    return;
+                  }
+                  onRemove(idx);
+                }}
+                disabled={disabled}
+                aria-label={`Remover ${opt.text}`}
+                title="Remover"
+                className={`grid h-4 w-4 shrink-0 cursor-pointer place-items-center rounded-full transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50 ${
+                  fo ? "bg-black/30 text-white hover:bg-[#ff4757]" : "bg-white/15 hover:bg-[#ff4757]"
+                }`}
+              >
+                <XIcon size={9} strokeWidth={3.2} />
+              </button>
+            </div>
+          );
+        })}
       </div>
     </section>
   );

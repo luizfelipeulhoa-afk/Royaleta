@@ -1,79 +1,70 @@
 import { useEffect, useRef, useState } from "react";
-import Wheel from "./components/Wheel";
-import type { WheelHandle } from "./components/Wheel";
-import ConfettiLayer from "./components/ConfettiLayer";
-import type { ConfettiHandle } from "./components/ConfettiLayer";
+import ArenaWheel, { type WheelHandle } from "./components/ArenaWheel";
+import ConfettiLayer, { type ConfettiHandle } from "./components/ConfettiLayer";
+import ArenaModal from "./components/ArenaModal";
 import OptionsCard from "./components/OptionsCard";
-import HistoryStrip from "./components/HistoryStrip";
-import WinnerModal from "./components/WinnerModal";
+import Scoreboard from "./components/Scoreboard";
+import CrowdSection from "./components/CrowdSection";
+import ArenaBackground from "./components/ArenaBackground";
 import {
   BoltIcon,
-  DiceIcon,
-  HandIcon,
-  ResetIcon,
-  SoundOffIcon,
-  SoundOnIcon,
-  SparkleIcon,
+  RepeatIcon,
+  RotateCcwIcon,
+  TrophyIcon,
+  Volume2Icon,
+  VolumeXIcon,
 } from "./components/icons";
-import { DEFAULT_OPTIONS, MAX_OPTIONS, guessEmoji, nextColor } from "./lib/data";
-import type { HistoryEntry, WheelOption } from "./lib/data";
-import { initAudio, playBlip, playWin, setSoundEnabled } from "./lib/audio";
+import {
+  DEFAULT_CHEER_OPTIONS,
+  MAX_OPTIONS,
+  guessCheerIcon,
+  isFullOut,
+  nextCheerColor,
+  type ArenaStats,
+  type CheerOption,
+  type DrawRecord,
+} from "./lib/cheer";
+import {
+  initAudio,
+  playBlip,
+  playCheerChime,
+  playFullOutFanfare,
+  setSoundEnabled,
+  stopSuspense,
+} from "./lib/arenaAudio";
 
-const LS_OPTIONS = "roleta_options";
-const LS_HISTORY = "roleta_history";
+const STORAGE_OPTIONS = "cheer_fullout_options";
+const STORAGE_HISTORY = "cheer_fullout_history";
+const STORAGE_STATS = "cheer_fullout_stats";
 
-function loadOptions(): WheelOption[] {
+function load<T>(key: string, fallback: T): T {
   try {
-    const raw = localStorage.getItem(LS_OPTIONS);
-    if (raw) {
-      const parsed = JSON.parse(raw) as WheelOption[];
-      if (
-        Array.isArray(parsed) &&
-        parsed.length >= 2 &&
-        parsed.every(
-          (o) =>
-            o &&
-            typeof o.text === "string" &&
-            typeof o.icon === "string" &&
-            typeof o.color === "string",
-        )
-      ) {
-        return parsed.slice(0, MAX_OPTIONS);
-      }
-    }
+    const raw = localStorage.getItem(key);
+    if (raw) return JSON.parse(raw) as T;
   } catch {
-    /* dados corrompidos — usa padrão */
+    /* armazenamento indisponível */
   }
-  return DEFAULT_OPTIONS.map((o) => ({ ...o }));
-}
-
-function loadHistory(): HistoryEntry[] {
-  try {
-    const raw = localStorage.getItem(LS_HISTORY);
-    if (raw) {
-      const parsed = JSON.parse(raw) as HistoryEntry[];
-      if (Array.isArray(parsed)) return parsed.slice(0, 12);
-    }
-  } catch {
-    /* ignora */
-  }
-  return [];
+  return fallback;
 }
 
 export default function App() {
-  const [options, setOptions] = useState<WheelOption[]>(loadOptions);
-  const [history, setHistory] = useState<HistoryEntry[]>(loadHistory);
+  const [options, setOptions] = useState<CheerOption[]>(() =>
+    load(STORAGE_OPTIONS, DEFAULT_CHEER_OPTIONS),
+  );
+  const [history, setHistory] = useState<DrawRecord[]>(() => load(STORAGE_HISTORY, []));
+  const [stats, setStats] = useState<ArenaStats>(() =>
+    load(STORAGE_STATS, { spins: 0, fullOuts: 0 }),
+  );
   const [isSpinning, setIsSpinning] = useState(false);
   const [autoMode, setAutoMode] = useState(false);
   const [soundOn, setSoundOn] = useState(true);
-  const [winner, setWinner] = useState<WheelOption | null>(null);
+  const [winner, setWinner] = useState<CheerOption | null>(null);
   const [modalShown, setModalShown] = useState(false);
-  const [lastWinnerIndex, setLastWinnerIndex] = useState(-1);
 
   const wheelRef = useRef<WheelHandle>(null);
   const confettiRef = useRef<ConfettiHandle>(null);
-  const autoTimersRef = useRef<number[]>([]);
   const autoModeRef = useRef(autoMode);
+  const autoTimersRef = useRef<number[]>([]);
 
   useEffect(() => {
     autoModeRef.current = autoMode;
@@ -82,37 +73,55 @@ export default function App() {
   /* persistência */
   useEffect(() => {
     try {
-      localStorage.setItem(LS_OPTIONS, JSON.stringify(options));
+      localStorage.setItem(STORAGE_OPTIONS, JSON.stringify(options));
     } catch {
-      /* sem armazenamento */
+      /* ignore */
     }
   }, [options]);
-
   useEffect(() => {
     try {
-      localStorage.setItem(LS_HISTORY, JSON.stringify(history));
+      localStorage.setItem(STORAGE_HISTORY, JSON.stringify(history));
     } catch {
-      /* sem armazenamento */
+      /* ignore */
     }
   }, [history]);
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_STATS, JSON.stringify(stats));
+    } catch {
+      /* ignore */
+    }
+  }, [stats]);
+
+  /* luzes de arena durante o giro */
+  useEffect(() => {
+    document.body.classList.toggle("in-competition", isSpinning);
+    return () => document.body.classList.remove("in-competition");
+  }, [isSpinning]);
 
   const clearAutoTimers = () => {
     autoTimersRef.current.forEach((t) => window.clearTimeout(t));
     autoTimersRef.current = [];
   };
 
-  useEffect(() => clearAutoTimers, []);
+  useEffect(
+    () => () => {
+      clearAutoTimers();
+      stopSuspense();
+    },
+    [],
+  );
 
   /* ---------- ações ---------- */
 
-  const openWinnerModal = (drawn: WheelOption) => {
+  const openWinnerModal = (drawn: CheerOption) => {
     setWinner(drawn);
     window.setTimeout(() => setModalShown(true), 30);
   };
 
   const closeWinnerModal = () => {
     setModalShown(false);
-    window.setTimeout(() => setWinner(null), 230);
+    window.setTimeout(() => setWinner(null), 240);
   };
 
   const requestSpin = () => {
@@ -129,20 +138,38 @@ export default function App() {
       return;
     }
 
+    const fullOut = isFullOut(drawn.text);
     setIsSpinning(false);
-    setLastWinnerIndex(index);
     setHistory((h) =>
       [
-        { text: drawn.text, icon: drawn.icon, color: drawn.color, at: Date.now() },
+        {
+          text: drawn.text,
+          icon: drawn.icon,
+          color: drawn.color,
+          fullOut,
+          at: Date.now(),
+        },
         ...h,
       ].slice(0, 12),
     );
+    setStats((s) => ({
+      spins: s.spins + 1,
+      fullOuts: s.fullOuts + (fullOut ? 1 : 0),
+    }));
 
-    playWin();
-    confettiRef.current?.launch();
-    if ("vibrate" in navigator) navigator.vibrate([100, 50, 150]);
+    if (fullOut) {
+      playFullOutFanfare();
+      confettiRef.current?.launch("massive");
+    } else {
+      playCheerChime();
+      confettiRef.current?.launch("standard");
+    }
+    if ("vibrate" in navigator) {
+      navigator.vibrate(fullOut ? [200, 100, 300, 100, 400] : [100, 50, 150]);
+    }
     openWinnerModal(drawn);
 
+    /* modo competição: continua o show sozinho */
     if (autoModeRef.current) {
       autoTimersRef.current.push(
         window.setTimeout(() => {
@@ -151,44 +178,48 @@ export default function App() {
             window.setTimeout(() => {
               setWinner(null);
               autoTimersRef.current.push(
-                window.setTimeout(() => wheelRef.current?.spin(), 900),
+                window.setTimeout(() => wheelRef.current?.spin(), 1000),
               );
-            }, 240),
+            }, 260),
           );
-        }, 3000),
+        }, 4000),
       );
     }
-  };
-
-  const handleAdd = (text: string) => {
-    setOptions((opts) => {
-      if (opts.length >= MAX_OPTIONS) return opts;
-      return [...opts, { text, icon: guessEmoji(text), color: nextColor(opts.length) }];
-    });
-    playBlip();
-  };
-
-  const handleRemove = (index: number) => {
-    setOptions((opts) => (opts.length > 2 ? opts.filter((_, i) => i !== index) : opts));
   };
 
   const handleSpinAgain = () => {
     clearAutoTimers();
     closeWinnerModal();
-    window.setTimeout(() => wheelRef.current?.spin(), 320);
-  };
-
-  const handleRemoveWinner = () => {
-    clearAutoTimers();
-    closeWinnerModal();
-    if (lastWinnerIndex >= 0 && options.length > 2) {
-      setOptions((opts) => opts.filter((_, i) => i !== lastWinnerIndex));
-    }
+    window.setTimeout(() => wheelRef.current?.spin(), 340);
   };
 
   const handleCloseModal = () => {
     clearAutoTimers();
     closeWinnerModal();
+  };
+
+  const handleAdd = (text: string) => {
+    initAudio();
+    playBlip();
+    setOptions((opts) =>
+      opts.length >= MAX_OPTIONS
+        ? opts
+        : [...opts, { text, icon: guessCheerIcon(text), color: nextCheerColor() }],
+    );
+  };
+
+  const handleRemove = (index: number) => {
+    setOptions((opts) => opts.filter((_, i) => i !== index));
+  };
+
+  const toggleSound = () => {
+    const next = !soundOn;
+    setSoundOn(next);
+    setSoundEnabled(next);
+    if (next) {
+      initAudio();
+      playBlip();
+    }
   };
 
   const toggleAutoMode = () => {
@@ -201,112 +232,68 @@ export default function App() {
     }
     playBlip();
     if (winner && modalShown) {
-      /* modal aberto: retoma o loop automático */
+      /* modal aberto: retoma a sequência de competição */
       autoTimersRef.current.push(window.setTimeout(handleSpinAgain, 1200));
     } else if (!winner && !isSpinning) {
       window.setTimeout(() => wheelRef.current?.spin(), 250);
     }
   };
 
-  const toggleSound = () => {
-    const next = !soundOn;
-    setSoundOn(next);
-    setSoundEnabled(next);
-    if (next) playBlip();
-  };
-
   const handleReset = () => {
-    if (!window.confirm("Restaurar as opções padrão da roleta?")) return;
+    if (!window.confirm("Restaurar as rotinas padrão de cheerleading?")) return;
     clearAutoTimers();
     setAutoMode(false);
     setModalShown(false);
     setWinner(null);
-    setOptions(DEFAULT_OPTIONS.map((o) => ({ ...o })));
-    setHistory([]);
-    playBlip();
+    setOptions(DEFAULT_CHEER_OPTIONS.map((o) => ({ ...o })));
   };
 
-  /* ---------- render ---------- */
+  /* ---------- layout ---------- */
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-3 py-6">
-      {/* fundo ambiente */}
-      <div className="pointer-events-none absolute inset-0" aria-hidden>
-        <div className="ambient-orb left-[4%] top-[6%] h-56 w-56 bg-primary" />
-        <div
-          className="ambient-orb left-[10%] bottom-[10%] h-48 w-48 bg-[#fbbf24]"
-          style={{ animationDelay: "-7s" }}
-        />
-        <div
-          className="ambient-orb right-[6%] top-[16%] h-52 w-52 bg-[#38bdf8]"
-          style={{ animationDelay: "-13s" }}
-        />
-        <div
-          className="ambient-orb right-[12%] bottom-[8%] h-44 w-44 bg-[#f472b6]"
-          style={{ animationDelay: "-19s" }}
-        />
-        <span className="animate-sparkle absolute left-[16%] top-[22%] text-primary/40">
-          <SparkleIcon size={22} />
-        </span>
-        <span
-          className="animate-sparkle absolute right-[18%] top-[38%] text-[#fbbf24]/50"
-          style={{ animationDelay: "-3s" }}
-        >
-          <SparkleIcon size={16} />
-        </span>
-        <span
-          className="animate-sparkle absolute left-[22%] bottom-[18%] text-[#38bdf8]/40"
-          style={{ animationDelay: "-6s" }}
-        >
-          <SparkleIcon size={18} />
-        </span>
-      </div>
-
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-2.5 py-5">
+      <ArenaBackground />
       <ConfettiLayer ref={confettiRef} />
 
-      <div className="rise-in relative flex w-full max-w-[440px] flex-col items-center rounded-[46px] border-8 border-white bg-paper/95 px-5 pb-7 pt-6 shadow-[20px_24px_50px_rgba(166,180,200,0.45),-16px_-16px_40px_rgba(255,255,255,0.9)]">
-        {/* barra superior */}
-        <div className="mb-2 flex w-full items-center justify-between px-1">
-          <button
-            type="button"
-            onClick={toggleSound}
-            title={soundOn ? "Desativar som" : "Ativar som"}
-            aria-pressed={soundOn}
-            className="grid h-10 w-10 place-items-center rounded-full border border-white bg-[#f0f4f9] text-ink-soft shadow-clay transition-all duration-150 hover:-translate-y-0.5 hover:text-ink active:scale-90 active:shadow-clay-inset"
-          >
-            {soundOn ? <SoundOnIcon size={17} /> : <SoundOffIcon size={17} />}
-          </button>
-
-          <div className="flex items-center gap-1.5 text-faint">
-            <DiceIcon size={15} strokeWidth={2} />
-            <span className="text-[11px] font-extrabold uppercase tracking-[1.2px]">
-              Roleta interativa
-            </span>
+      <main className="relative z-10 flex w-full max-w-[440px] flex-col items-center overflow-hidden rounded-[44px] border-2 border-white/15 bg-[rgba(18,24,43,0.88)] px-4 pb-6 pt-5 shadow-[0_20px_60px_rgba(0,0,0,0.75)] backdrop-blur-[14px]">
+        {/* cabeçalho */}
+        <header className="rise-in relative mb-2 w-full text-center" style={{ animationDelay: "0.03s" }}>
+          <div className="absolute right-0 top-0 flex gap-1.5">
+            <button
+              type="button"
+              onClick={toggleSound}
+              aria-label={soundOn ? "Desativar som" : "Ativar som"}
+              title={soundOn ? "Desativar som" : "Ativar som"}
+              className="grid h-9 w-9 cursor-pointer place-items-center rounded-full border border-white/20 bg-white/10 text-white transition-transform duration-150 hover:scale-110 active:scale-90"
+            >
+              {soundOn ? <Volume2Icon size={16} /> : <VolumeXIcon size={16} />}
+            </button>
+            <button
+              type="button"
+              onClick={handleReset}
+              aria-label="Restaurar padrão"
+              title="Restaurar padrão"
+              className="grid h-9 w-9 cursor-pointer place-items-center rounded-full border border-white/20 bg-white/10 text-white transition-transform duration-150 hover:scale-110 active:scale-90"
+            >
+              <RotateCcwIcon size={15} />
+            </button>
           </div>
 
-          <button
-            type="button"
-            onClick={handleReset}
-            title="Restaurar opções padrão"
-            className="grid h-10 w-10 place-items-center rounded-full border border-white bg-[#f0f4f9] text-ink-soft shadow-clay transition-all duration-150 hover:-translate-y-0.5 hover:text-ink active:scale-90 active:shadow-clay-inset"
-          >
-            <ResetIcon size={16} />
-          </button>
-        </div>
-
-        {/* cabeçalho */}
-        <header className="rise-in mb-1.5 text-center" style={{ animationDelay: "70ms" }}>
-          <h1 className="font-display text-[27px] font-bold leading-[1.05] tracking-[0.8px] text-[#2b3950]">
-            ROLETA 3D
+          <span className="mb-1.5 inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-punch to-grape px-3.5 py-1 text-[11px] font-extrabold uppercase tracking-[1.2px] text-white shadow-[0_3px_10px_rgba(255,42,133,0.4)]">
+            <TrophyIcon size={12} strokeWidth={2.6} />
+            Cheerleading Championship
+          </span>
+          <h1 className="font-display text-2xl font-black uppercase leading-tight tracking-wide text-white [text-shadow:0_0_20px_rgba(0,240,255,0.45)]">
+            Full Outs Arena
           </h1>
-          <p className="font-display text-[17px] font-semibold uppercase tracking-[2px] text-ink-soft/90">
-            Personalizada
+          <p className="font-display text-[15px] font-extrabold uppercase tracking-[2.5px] text-gold [text-shadow:0_0_12px_rgba(255,199,44,0.6)]">
+            Roleta de Rotina
           </p>
         </header>
 
         {/* roleta */}
-        <div className="rise-in" style={{ animationDelay: "140ms" }}>
-          <Wheel
+        <div className="rise-in" style={{ animationDelay: "0.08s" }}>
+          <ArenaWheel
             ref={wheelRef}
             options={options}
             onSpinStart={handleSpinStart}
@@ -314,13 +301,13 @@ export default function App() {
           />
         </div>
 
-        {/* histórico */}
-        <div className="rise-in mb-3 mt-2 w-full" style={{ animationDelay: "210ms" }}>
-          <HistoryStrip history={history} />
+        {/* torcida */}
+        <div className="rise-in mb-3 mt-1 w-full" style={{ animationDelay: "0.13s" }}>
+          <CrowdSection hyped={isSpinning} />
         </div>
 
-        {/* editor de opções */}
-        <div className="rise-in mb-4 w-full" style={{ animationDelay: "280ms" }}>
+        {/* opções de treino */}
+        <div className="rise-in mb-3 w-full" style={{ animationDelay: "0.18s" }}>
           <OptionsCard
             options={options}
             disabled={isSpinning}
@@ -329,59 +316,53 @@ export default function App() {
           />
         </div>
 
+        {/* jumbotron / placar */}
+        <div className="rise-in mb-4 w-full" style={{ animationDelay: "0.22s" }}>
+          <Scoreboard history={history} stats={stats} />
+        </div>
+
         {/* ações */}
-        <div className="rise-in flex w-full gap-3" style={{ animationDelay: "350ms" }}>
+        <div className="rise-in flex w-full gap-2.5" style={{ animationDelay: "0.26s" }}>
           <button
             type="button"
             onClick={requestSpin}
-            disabled={isSpinning}
-            className="flex h-[52px] flex-[1.3] items-center justify-center gap-2 rounded-[28px] bg-gradient-to-b from-primary-bright to-primary-deep font-display text-lg font-bold uppercase tracking-wide text-white shadow-[0_8px_18px_rgba(37,164,128,0.42),inset_0_2px_0_rgba(255,255,255,0.4)] transition-all duration-150 hover:brightness-105 active:translate-y-0.5 active:shadow-[0_4px_8px_rgba(37,164,128,0.35)] disabled:cursor-not-allowed disabled:opacity-65"
+            disabled={isSpinning || options.length < 2}
+            className="font-display flex h-[52px] flex-[1.4] cursor-pointer items-center justify-center gap-2 rounded-[26px] bg-gradient-to-br from-neon to-[#0072ff] text-base font-black uppercase tracking-wide text-night shadow-[0_8px_24px_rgba(0,240,255,0.45)] transition-all duration-150 hover:brightness-110 active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-55"
           >
-            <BoltIcon size={19} />
-            {isSpinning ? "Girando…" : "Girar agora"}
+            <BoltIcon size={18} strokeWidth={2.8} />
+            {isSpinning ? "Girando..." : "Girar agora"}
           </button>
-
           <button
             type="button"
             onClick={toggleAutoMode}
             aria-pressed={autoMode}
-            className={`flex h-[52px] flex-1 flex-col items-center justify-center rounded-[28px] font-display text-sm font-bold uppercase leading-[1.15] transition-all duration-200 ${
+            title={autoMode ? "Desativar modo competição" : "Ativar modo competição"}
+            className={`font-display flex h-[52px] flex-1 cursor-pointer flex-col items-center justify-center rounded-[26px] border text-xs font-extrabold uppercase leading-tight transition-all duration-200 ${
               autoMode
-                ? "bg-ink text-white shadow-[0_8px_16px_rgba(43,57,80,0.35),inset_0_2px_0_rgba(255,255,255,0.12)]"
-                : "border border-[#dce6f2] bg-white text-ink shadow-clay hover:-translate-y-0.5 active:translate-y-0.5"
+                ? "border-punch bg-gradient-to-br from-punch to-[#ff7300] text-white shadow-[0_0_16px_rgba(255,42,133,0.5)]"
+                : "border-white/20 bg-white/10 text-white hover:bg-white/20"
             }`}
           >
             <span className="flex items-center gap-1.5">
-              <span
-                className={`h-1.5 w-1.5 rounded-full ${
-                  autoMode ? "animate-blink bg-primary-bright" : "bg-line"
-                }`}
-              />
+              {autoMode ? (
+                <RepeatIcon size={13} strokeWidth={2.8} />
+              ) : (
+                <span className="h-1.5 w-1.5 rounded-full bg-neon animate-blink" />
+              )}
               Modo
             </span>
-            <span className="text-[11px] opacity-80">Automático</span>
+            <span className="text-[11px] opacity-85">Competição</span>
           </button>
         </div>
+      </main>
 
-        {/* dica */}
-        <p
-          className="rise-in mt-4 flex items-center gap-1.5 text-[11px] font-bold text-faint"
-          style={{ animationDelay: "420ms" }}
-        >
-          <HandIcon size={14} strokeWidth={2} />
-          Toque na roleta para girar · mínimo de 2 opções
-        </p>
-      </div>
-
-      <WinnerModal
+      <ArenaModal
         open={modalShown}
         winner={winner}
-        optionsCount={options.length}
         autoMode={autoMode}
         onSpinAgain={handleSpinAgain}
-        onRemoveWinner={handleRemoveWinner}
         onClose={handleCloseModal}
       />
-    </main>
+    </div>
   );
 }

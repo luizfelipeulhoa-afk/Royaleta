@@ -1,7 +1,9 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 
+export type ConfettiMode = "standard" | "massive";
+
 export interface ConfettiHandle {
-  launch(): void;
+  launch(mode?: ConfettiMode): void;
 }
 
 interface Particle {
@@ -18,30 +20,22 @@ interface Particle {
   round: boolean;
 }
 
-const COLORS = [
-  "#f87171",
-  "#fbbf24",
-  "#34d399",
-  "#38bdf8",
-  "#818cf8",
-  "#f472b6",
-  "#2dd4bf",
-  "#fb923c",
-];
+const STANDARD_COLORS = ["#00f0ff", "#ff2a85", "#ffd700", "#ffffff"];
+const MASSIVE_COLORS = ["#ffd700", "#ffaa00", "#fffbe8", "#00f0ff", "#ff2a85"];
 
-function makeParticle(x: number, y: number, vx: number, vy: number): Particle {
+function makeParticle(x: number, y: number, vx: number, vy: number, colors: string[]): Particle {
   return {
     x,
     y,
-    w: Math.random() * 9 + 5,
-    h: Math.random() * 6 + 3,
-    color: COLORS[Math.floor(Math.random() * COLORS.length)],
+    w: Math.random() * 10 + 6,
+    h: Math.random() * 7 + 4,
+    color: colors[Math.floor(Math.random() * colors.length)],
     vx,
     vy,
     rot: Math.random() * 360,
-    rotSpeed: (Math.random() - 0.5) * 14,
+    rotSpeed: (Math.random() - 0.5) * 16,
     opacity: 1,
-    round: Math.random() < 0.25,
+    round: Math.random() < 0.22,
   };
 }
 
@@ -79,7 +73,7 @@ const ConfettiLayer = forwardRef<ConfettiHandle, object>(function ConfettiLayer(
       const p = parts[i];
       p.x += p.vx;
       p.y += p.vy;
-      p.vy += 0.32;
+      p.vy += 0.38;
       p.vx *= 0.992;
       p.rot += p.rotSpeed;
       p.opacity -= 0.008;
@@ -110,26 +104,40 @@ const ConfettiLayer = forwardRef<ConfettiHandle, object>(function ConfettiLayer(
   };
 
   useImperativeHandle(ref, () => ({
-    launch() {
+    launch(mode: ConfettiMode = "standard") {
       const w = window.innerWidth;
       const h = window.innerHeight;
       const parts = particlesRef.current;
 
-      /* explosão central atrás do modal */
-      for (let i = 0; i < 70; i++) {
-        parts.push(
-          makeParticle(
-            w / 2,
-            h / 2 - 60,
-            (Math.random() - 0.5) * 17,
-            (Math.random() - 0.72) * 17,
-          ),
-        );
-      }
-      /* canhões laterais */
-      for (let i = 0; i < 30; i++) {
-        parts.push(makeParticle(w * 0.06, h * 0.62, Math.random() * 11 + 4, -(Math.random() * 13 + 5)));
-        parts.push(makeParticle(w * 0.94, h * 0.62, -(Math.random() * 11 + 4), -(Math.random() * 13 + 5)));
+      if (mode === "massive") {
+        /* chuva dourada de FULL OUT */
+        for (let i = 0; i < 150; i++) {
+          parts.push(
+            makeParticle(
+              w / 2,
+              h / 2 - 50,
+              (Math.random() - 0.5) * 22,
+              (Math.random() - 0.72) * 21,
+              MASSIVE_COLORS,
+            ),
+          );
+        }
+        for (let i = 0; i < 35; i++) {
+          parts.push(makeParticle(w * 0.05, h * 0.6, Math.random() * 13 + 4, -(Math.random() * 15 + 6), MASSIVE_COLORS));
+          parts.push(makeParticle(w * 0.95, h * 0.6, -(Math.random() * 13 + 4), -(Math.random() * 15 + 6), MASSIVE_COLORS));
+        }
+      } else {
+        for (let i = 0; i < 70; i++) {
+          parts.push(
+            makeParticle(
+              w / 2,
+              h / 2 - 50,
+              (Math.random() - 0.5) * 19,
+              (Math.random() - 0.7) * 19,
+              STANDARD_COLORS,
+            ),
+          );
+        }
       }
 
       if (!runningRef.current) {
