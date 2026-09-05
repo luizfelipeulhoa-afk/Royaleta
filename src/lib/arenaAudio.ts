@@ -207,24 +207,42 @@ export function stopSuspense(): void {
 
 /* ---------- resultados ---------- */
 
+/** Fanfarra harmônica: acorde de Dó maior pleno + arpejo brilhante. */
 export function playCheerChime(): void {
   if (!enabled) return;
   initAudio();
   const c = ctx;
   if (!c) return;
   try {
-    [523.25, 659.25, 783.99, 1046.5].forEach((freq, i) => {
-      const t = c.currentTime + i * 0.08;
+    /* acorde de vitória simultâneo (C4 E4 G4 C5) */
+    [261.63, 329.63, 392.0, 523.25].forEach((freq) => {
       const osc = c.createOscillator();
       const gain = c.createGain();
       osc.type = "sine";
+      osc.frequency.setValueAtTime(freq, c.currentTime);
+      gain.gain.setValueAtTime(0.0001, c.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.15, c.currentTime + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.95);
+      osc.connect(gain);
+      gain.connect(c.destination);
+      osc.start();
+      osc.stop(c.currentTime + 1);
+    });
+
+    /* arpejo brilhante ascendente */
+    [523.25, 659.25, 783.99, 1046.5].forEach((freq, i) => {
+      const t = c.currentTime + 0.1 + i * 0.09;
+      const osc = c.createOscillator();
+      const gain = c.createGain();
+      osc.type = "triangle";
       osc.frequency.setValueAtTime(freq, t);
-      gain.gain.setValueAtTime(0.25, t);
-      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(0.22, t + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
       osc.connect(gain);
       gain.connect(c.destination);
       osc.start(t);
-      osc.stop(t + 0.45);
+      osc.stop(t + 0.55);
     });
   } catch {
     /* ignore */

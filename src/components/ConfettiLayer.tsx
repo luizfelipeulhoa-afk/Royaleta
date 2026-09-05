@@ -20,8 +20,8 @@ interface Particle {
   round: boolean;
 }
 
-const STANDARD_COLORS = ["#f5c542", "#4a6ee0", "#ffffff", "#9db8ff"];
-const MASSIVE_COLORS = ["#f5c542", "#fde68a", "#fffbe8", "#4a6ee0", "#b8860b"];
+const STANDARD_COLORS = ["#fde047", "#3b82f6", "#ffffff", "#06b6d4"];
+const MASSIVE_COLORS = ["#f59e0b", "#fde047", "#fff7d6", "#3b82f6", "#b45309"];
 
 function makeParticle(x: number, y: number, vx: number, vy: number, colors: string[]): Particle {
   return {

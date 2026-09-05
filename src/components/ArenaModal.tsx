@@ -6,7 +6,6 @@ import { BoltIcon, CrownIcon, SparklesIcon } from "./icons";
 interface ArenaModalProps {
   open: boolean;
   winner: CheerOption | null;
-  autoMode: boolean;
   onSpinAgain: () => void;
   onClose: () => void;
 }
@@ -15,7 +14,6 @@ interface ArenaModalProps {
 export default function ArenaModal({
   open,
   winner,
-  autoMode,
   onSpinAgain,
   onClose,
 }: ArenaModalProps) {
@@ -66,12 +64,6 @@ export default function ArenaModal({
               {winner.text}
             </p>
 
-            {autoMode && (
-              <p className="mt-1 text-[11px] font-bold uppercase tracking-wide text-white/40">
-                Próximo decreto em instantes…
-              </p>
-            )}
-
             <button
               type="button"
               onClick={onSpinAgain}
@@ -104,12 +96,6 @@ export default function ArenaModal({
             <p className="text-sm font-bold text-[#e2e8f0]">
               “A corte está em êxtase! Bora cravar esse full out!”
             </p>
-
-            {autoMode && (
-              <p className="mt-1 text-[11px] font-bold uppercase tracking-wide text-white/40">
-                Próximo decreto em instantes…
-              </p>
-            )}
 
             <button
               type="button"
