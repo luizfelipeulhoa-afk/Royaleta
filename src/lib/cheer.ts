@@ -20,42 +20,33 @@ export interface ArenaStats {
 export const MAX_OPTIONS = 16;
 export const MIN_OPTIONS = 2;
 
-/** Pessoas com os braços para cima, em diferentes tons de pele. */
-export const ARM_TONES = ["🙌🏻", "🙌🏼", "🙌🏽", "🙌🏾", "🙌🏿"];
-
-export function cheerIcon(index: number): string {
-  return ARM_TONES[index % ARM_TONES.length];
-}
-
-/** Azuis escuros e reais para as fatias da roleta. */
-export const ROYAL_BLUE_POOL = [
-  "#3557c4",
-  "#2f5fd0",
-  "#4a6ee0",
-  "#274b9f",
-  "#5b7ff0",
-  "#3f6ae8",
-];
+/** O símbolo único da corte: coroa. */
+export const CROWN = "👑";
 
 export const DEFAULT_CHEER_OPTIONS: CheerOption[] = [
-  { text: "Stunt Full Out", icon: "🙌🏻", color: "#3557c4" },
-  { text: "Tumbling Full Out", icon: "🙌🏼", color: "#274b9f" },
-  { text: "Jumps + Over all", icon: "🙌🏽", color: "#4a6ee0" },
-  { text: "Half out 1", icon: "🙌🏾", color: "#2f5fd0" },
-  { text: "Half out 2", icon: "🙌🏿", color: "#5b7ff0" },
-  { text: "FULL OUT", icon: "🙌🏽", color: "#eab308" },
+  { text: "Stunt Full Out", icon: CROWN, color: "#1e3a8a" },
+  { text: "Tumbling Full Out", icon: CROWN, color: "#274690" },
+  { text: "Jumps + Over all", icon: CROWN, color: "#3557c4" },
+  { text: "Half out 1", icon: CROWN, color: "#1a2f6e" },
+  { text: "Half out 2", icon: CROWN, color: "#2f4fae" },
+  { text: "FULL OUT", icon: CROWN, color: "#eab308" },
 ];
 
-function normalize(value: string): string {
-  return value
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-}
+/** Azuis reais para as novas rotinas (a fatia especial é detectada pelo texto). */
+export const ROYAL_PALETTE = [
+  "#1e3a8a",
+  "#274690",
+  "#1a2f6e",
+  "#3557c4",
+  "#2f4fae",
+  "#14275e",
+  "#3b5cc9",
+  "#0f2057",
+];
 
-export function guessCheerIcon(text: string, index: number): string {
-  void normalize(text);
-  return cheerIcon(index);
+/** Todas as opções carregam a coroa da corte. */
+export function guessCheerIcon(_text: string, _index = 0): string {
+  return CROWN;
 }
 
 /** A fatia dourada especial é identificada pelo texto exato "FULL OUT". */
@@ -64,7 +55,7 @@ export function isFullOut(text: string): boolean {
 }
 
 export function nextCheerColor(): string {
-  return ROYAL_BLUE_POOL[Math.floor(Math.random() * ROYAL_BLUE_POOL.length)];
+  return ROYAL_PALETTE[Math.floor(Math.random() * ROYAL_PALETTE.length)];
 }
 
 export function truncateLabel(text: string, max = 15): string {

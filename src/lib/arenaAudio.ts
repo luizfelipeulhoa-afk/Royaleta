@@ -1,7 +1,7 @@
 /**
  * Motor de áudio da arena (Web Audio API):
  * - ticks do ponteiro
- * - trilha de suspense durante o giro (sawtooth ascendente + bumbos acelerando)
+ * - tema de tubarão durante o giro (motivo grave Mi–Fá acelerando + drone sombrio)
  * - chime de resultado e fanfarra de FULL OUT
  */
 
@@ -76,7 +76,55 @@ function playBassThump(): void {
   }
 }
 
-/* ---------- suspense ---------- */
+/* ---------- suspense: o tema do tubarão ---------- */
+
+/* O motivo clássico de tensão: Mi2 e Fá2 alternados (semitom ameaçador),
+   tocados por um "tuba" de sawtooths desafinados + sub grave. */
+const SHARK_E = 82.41; // Mi2
+const SHARK_F = 87.31; // Fá2
+
+function playSharkNote(freq: number, when: number, power: number): void {
+  const c = ctx;
+  if (!c) return;
+  try {
+    const t = c.currentTime + when;
+    const growl1 = c.createOscillator();
+    const growl2 = c.createOscillator();
+    const sub = c.createOscillator();
+    const gain = c.createGain();
+    const filter = c.createBiquadFilter();
+
+    growl1.type = "sawtooth";
+    growl1.frequency.setValueAtTime(freq, t);
+    growl2.type = "sawtooth";
+    growl2.frequency.setValueAtTime(freq * 1.008, t);
+    sub.type = "sine";
+    sub.frequency.setValueAtTime(freq / 2, t);
+
+    filter.type = "lowpass";
+    filter.frequency.setValueAtTime(230, t);
+    filter.frequency.exponentialRampToValueAtTime(430, t + 0.16);
+
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(power, t + 0.025);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.32);
+
+    growl1.connect(filter);
+    growl2.connect(filter);
+    filter.connect(gain);
+    sub.connect(gain);
+    gain.connect(c.destination);
+
+    growl1.start(t);
+    growl2.start(t);
+    sub.start(t);
+    growl1.stop(t + 0.38);
+    growl2.stop(t + 0.38);
+    sub.stop(t + 0.38);
+  } catch {
+    /* ignore */
+  }
+}
 
 export function startSuspense(): void {
   if (!enabled || suspenseActive) return;
@@ -92,15 +140,14 @@ export function startSuspense(): void {
     const filter = c.createBiquadFilter();
 
     suspenseOsc.type = "sawtooth";
-    suspenseOsc.frequency.setValueAtTime(65, c.currentTime);
-    suspenseOsc.frequency.exponentialRampToValueAtTime(140, c.currentTime + 4.5);
+    suspenseOsc.frequency.setValueAtTime(55, c.currentTime);
 
     filter.type = "lowpass";
-    filter.frequency.setValueAtTime(220, c.currentTime);
-    filter.frequency.exponentialRampToValueAtTime(600, c.currentTime + 4.5);
+    filter.frequency.setValueAtTime(150, c.currentTime);
+    filter.frequency.linearRampToValueAtTime(360, c.currentTime + 5);
 
     suspenseGain.gain.setValueAtTime(0.01, c.currentTime);
-    suspenseGain.gain.linearRampToValueAtTime(0.18, c.currentTime + 1.0);
+    suspenseGain.gain.linearRampToValueAtTime(0.09, c.currentTime + 1.2);
 
     suspenseOsc.connect(filter);
     filter.connect(suspenseGain);
@@ -110,13 +157,20 @@ export function startSuspense(): void {
     /* ignore */
   }
 
-  /* bumbos acelerando até o fim do giro */
-  let drumSpeed = 160;
+  /* o "tun-dun… tun-dun" que acelera e engrossa conforme o desfecho se aproxima */
+  let pace = 880;
+  let flip = false;
+  let beats = 0;
   const pulse = () => {
     if (!suspenseActive) return;
+    const power = Math.min(0.42, 0.28 + beats * 0.014);
+    playSharkNote(flip ? SHARK_F : SHARK_E, 0, power);
+    playSharkNote(flip ? SHARK_E : SHARK_F, 0.15, power);
     playBassThump();
-    drumSpeed = Math.max(70, drumSpeed * 0.94);
-    drumTimer = window.setTimeout(pulse, drumSpeed);
+    flip = !flip;
+    beats += 1;
+    pace = Math.max(170, pace * 0.925);
+    drumTimer = window.setTimeout(pulse, pace);
   };
   pulse();
 }

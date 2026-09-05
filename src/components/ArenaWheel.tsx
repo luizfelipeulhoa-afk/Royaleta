@@ -7,6 +7,7 @@ import {
   useState,
 } from "react";
 import type { CheerOption } from "../lib/cheer";
+import { CROWN } from "../lib/cheer";
 import { drawArenaWheel } from "../lib/drawArenaWheel";
 import { initAudio, playTick, startSuspense, stopSuspense } from "../lib/arenaAudio";
 
@@ -21,7 +22,7 @@ interface ArenaWheelProps {
 }
 
 const TAU = Math.PI * 2;
-const BADGES = ["🙌🏻", "🙌🏼", "🙌🏽", "🙌🏾"];
+const BADGES = [CROWN, CROWN, CROWN, CROWN];
 const BADGE_POSITIONS = [
   "top-2.5 -left-2.5",
   "top-4 -right-2",
@@ -139,7 +140,7 @@ const ArenaWheel = forwardRef<WheelHandle, ArenaWheelProps>(function ArenaWheel(
       {/* badges flutuantes */}
       {BADGES.map((badge, i) => (
         <div
-          key={badge}
+          key={i}
           className={`animate-arena-float pointer-events-none absolute z-20 rounded-[18px] border-2 border-[rgba(245,197,66,0.45)] bg-[rgba(13,27,61,0.9)] px-2.5 py-1.5 text-xl shadow-[0_8px_18px_rgba(0,0,0,0.5),0_0_12px_rgba(245,197,66,0.25)] ${BADGE_POSITIONS[i]}`}
           style={{ animationDelay: `${i * 0.55}s` }}
           aria-hidden

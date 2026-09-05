@@ -73,7 +73,7 @@ function sanitizeHistory(raw: unknown): DrawRecord[] {
     .slice(0, 12)
     .map((r) => ({
       text: String(r.text),
-      icon: typeof r.icon === "string" ? r.icon : "🙌🏽",
+      icon: typeof r.icon === "string" ? r.icon : "👑",
       color: typeof r.color === "string" ? r.color : "#3557c4",
       fullOut: !!r.fullOut,
       at: typeof r.at === "number" ? r.at : Date.now(),
@@ -224,6 +224,18 @@ export default function App() {
     setOptions((opts) => opts.filter((_, i) => i !== index));
   };
 
+  const duplicateOption = (index: number): boolean => {
+    if (options.length >= MAX_OPTIONS) return false;
+    playBlip();
+    setOptions((opts) => {
+      const copy = { ...opts[index] };
+      const next = [...opts];
+      next.splice(index + 1, 0, copy);
+      return next;
+    });
+    return true;
+  };
+
   const toggleSound = () => {
     initAudio();
     const next = !soundOn;
@@ -300,7 +312,13 @@ export default function App() {
 
         <div className="h-3" />
 
-        <OptionsCard options={options} disabled={isSpinning} onAdd={addOption} onRemove={removeOption} />
+        <OptionsCard
+          options={options}
+          disabled={isSpinning}
+          onAdd={addOption}
+          onRemove={removeOption}
+          onDuplicate={duplicateOption}
+        />
 
         <div className="mt-3.5 flex w-full gap-2.5">
           <button

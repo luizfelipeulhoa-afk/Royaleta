@@ -1,4 +1,4 @@
-import { ARM_TONES } from "../lib/cheer";
+import { CROWN } from "../lib/cheer";
 import { CrownIcon } from "./icons";
 
 interface CrowdSectionProps {
@@ -12,9 +12,9 @@ interface Person {
   dur: number;
 }
 
-/* 30 súditos deterministicamente variados */
+/* 30 coroas deterministicamente variadas */
 const PEOPLE: Person[] = Array.from({ length: 30 }, (_, i) => ({
-  tone: ARM_TONES[i % ARM_TONES.length],
+  tone: CROWN,
   size: 16 + ((i * 7) % 4) * 4,
   delay: ((i * 37) % 50) / 100,
   dur: 0.3 + ((i * 13) % 20) / 100,

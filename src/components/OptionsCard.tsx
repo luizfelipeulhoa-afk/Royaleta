@@ -1,17 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import type { CheerOption } from "../lib/cheer";
 import { isFullOut, MAX_OPTIONS, MIN_OPTIONS } from "../lib/cheer";
-import { CrownIcon, PlusIcon, XIcon } from "./icons";
+import { CopyIcon, CrownIcon, PlusIcon, XIcon } from "./icons";
 
 interface OptionsCardProps {
   options: CheerOption[];
   disabled: boolean;
   onAdd: (text: string) => void;
   onRemove: (index: number) => void;
+  onDuplicate: (index: number) => boolean;
 }
 
-/** Card de rotinas da corte: input + brasões (chips) removíveis. */
-export default function OptionsCard({ options, disabled, onAdd, onRemove }: OptionsCardProps) {
+/** Card de rotinas da corte: input + brasões (chips) duplicáveis e removíveis. */
+export default function OptionsCard({ options, disabled, onAdd, onRemove, onDuplicate }: OptionsCardProps) {
   const [value, setValue] = useState("");
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -101,6 +102,20 @@ export default function OptionsCard({ options, disabled, onAdd, onRemove }: Opti
               />
               <span aria-hidden>{opt.icon}</span>
               <span>{opt.text}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!onDuplicate(idx)) showError(`Limite de ${MAX_OPTIONS} rotinas no reinado`);
+                }}
+                disabled={disabled}
+                aria-label={`Duplicar ${opt.text}`}
+                title="Duplicar"
+                className={`grid h-4 w-4 shrink-0 cursor-pointer place-items-center rounded-full transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50 ${
+                  fo ? "bg-black/30 text-[#ffe9a8] hover:bg-gold hover:text-[#241a05]" : "bg-white/15 hover:bg-gold hover:text-[#241a05]"
+                }`}
+              >
+                <CopyIcon size={9} strokeWidth={2.6} />
+              </button>
               <button
                 type="button"
                 onClick={() => {

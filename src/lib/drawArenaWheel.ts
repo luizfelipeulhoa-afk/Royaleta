@@ -1,5 +1,5 @@
 import type { CheerOption } from "./cheer";
-import { ARM_TONES, isFullOut, truncateLabel } from "./cheer";
+import { CROWN, isFullOut, truncateLabel } from "./cheer";
 
 const TAU = Math.PI * 2;
 const EMOJI_FONT = '"Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif';
@@ -177,7 +177,7 @@ export function drawArenaWheel(
       ctx.textBaseline = "middle";
 
       ctx.font = `30px ${EMOJI_FONT}`;
-      ctx.fillText(ARM_TONES[i % ARM_TONES.length], radius - 20, 2);
+      ctx.fillText(CROWN, radius - 20, 2);
 
       ctx.font = special
         ? `900 ${total > 8 ? 26 : 30}px Cinzel, Georgia, serif`
