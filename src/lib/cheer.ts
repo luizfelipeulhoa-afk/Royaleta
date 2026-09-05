@@ -20,56 +20,31 @@ export interface ArenaStats {
 export const MAX_OPTIONS = 16;
 export const MIN_OPTIONS = 2;
 
+/** Pessoas com os braços para cima, em diferentes tons de pele. */
+export const ARM_TONES = ["🙌🏻", "🙌🏼", "🙌🏽", "🙌🏾", "🙌🏿"];
+
+export function cheerIcon(index: number): string {
+  return ARM_TONES[index % ARM_TONES.length];
+}
+
+/** Azuis escuros e reais para as fatias da roleta. */
+export const ROYAL_BLUE_POOL = [
+  "#3557c4",
+  "#2f5fd0",
+  "#4a6ee0",
+  "#274b9f",
+  "#5b7ff0",
+  "#3f6ae8",
+];
+
 export const DEFAULT_CHEER_OPTIONS: CheerOption[] = [
-  { text: "Stunt Full Out", icon: "⚡", color: "#00b4d8" },
-  { text: "Tumbling Full Out", icon: "🌪️", color: "#9d4edd" },
-  { text: "Jumps + Over all", icon: "🎀", color: "#ff2a85" },
-  { text: "Half out 1", icon: "⏱️", color: "#2563eb" },
-  { text: "Half out 2", icon: "⏱️", color: "#059669" },
-  { text: "FULL OUT", icon: "🏆", color: "#eab308" },
+  { text: "Stunt Full Out", icon: "🙌🏻", color: "#3557c4" },
+  { text: "Tumbling Full Out", icon: "🙌🏼", color: "#274b9f" },
+  { text: "Jumps + Over all", icon: "🙌🏽", color: "#4a6ee0" },
+  { text: "Half out 1", icon: "🙌🏾", color: "#2f5fd0" },
+  { text: "Half out 2", icon: "🙌🏿", color: "#5b7ff0" },
+  { text: "FULL OUT", icon: "🙌🏽", color: "#eab308" },
 ];
-
-/** Cores vibrantes que funcionam bem sobre o fundo escuro da arena. */
-export const NEON_PALETTE = [
-  "#00b4d8",
-  "#9d4edd",
-  "#ff2a85",
-  "#2563eb",
-  "#059669",
-  "#eab308",
-  "#f97316",
-  "#00f0ff",
-  "#a3e635",
-  "#f43f5e",
-];
-
-const ICON_MAP: Record<string, string> = {
-  stunt: "⚡",
-  full: "🏆",
-  tumbling: "🌪️",
-  salto: "🌪️",
-  mortal: "🌪️",
-  jumps: "🤸",
-  jump: "🤸",
-  overall: "🎀",
-  dance: "💃",
-  danc: "💃",
-  piramide: "🔺",
-  pyramid: "🔺",
-  basket: "🧺",
-  flex: "💪",
-  half: "⏱️",
-  warm: "🔥",
-  aquec: "🔥",
-  coreo: "🎶",
-  musica: "🎶",
-  stretch: "🧘",
-  along: "🧘",
-  flyer: "🪽",
-  base: "🏋️",
-  grit: "📣",
-  grito: "📣",
-};
 
 function normalize(value: string): string {
   return value
@@ -78,12 +53,9 @@ function normalize(value: string): string {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
-export function guessCheerIcon(text: string): string {
-  const lower = normalize(text);
-  for (const [key, icon] of Object.entries(ICON_MAP)) {
-    if (lower.includes(key)) return icon;
-  }
-  return "⚡";
+export function guessCheerIcon(text: string, index: number): string {
+  void normalize(text);
+  return cheerIcon(index);
 }
 
 /** A fatia dourada especial é identificada pelo texto exato "FULL OUT". */
@@ -92,7 +64,7 @@ export function isFullOut(text: string): boolean {
 }
 
 export function nextCheerColor(): string {
-  return NEON_PALETTE[Math.floor(Math.random() * NEON_PALETTE.length)];
+  return ROYAL_BLUE_POOL[Math.floor(Math.random() * ROYAL_BLUE_POOL.length)];
 }
 
 export function truncateLabel(text: string, max = 15): string {

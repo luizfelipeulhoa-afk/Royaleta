@@ -1,5 +1,5 @@
 import type { ArenaStats, DrawRecord } from "../lib/cheer";
-import { HistoryIcon, TrophyIcon } from "./icons";
+import { CrownIcon, HistoryIcon, TrophyIcon } from "./icons";
 
 interface ScoreboardProps {
   history: DrawRecord[];
@@ -13,7 +13,7 @@ function formatTime(ts: number): string {
   });
 }
 
-/** Jumbotron da arena: placar de estatísticas + últimos resultados. */
+/** Placar da corte: estatísticas do reinado + últimos decretos. */
 export default function Scoreboard({ history, stats }: ScoreboardProps) {
   const visible = history.slice(0, 6);
 
@@ -22,18 +22,18 @@ export default function Scoreboard({ history, stats }: ScoreboardProps) {
       <div className="mb-1.5 flex items-center justify-between">
         <div className="flex items-center gap-1.5 text-white/40">
           <HistoryIcon size={13} strokeWidth={2.6} />
-          <span className="text-[11px] font-extrabold uppercase tracking-[1px]">
-            Jumbotron
+          <span className="font-display text-[11px] font-extrabold uppercase tracking-[1px]">
+            Placar da corte
           </span>
         </div>
         <div className="flex items-center gap-1.5">
           <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-[10px] font-extrabold tracking-wide text-fog">
-            GIROS <span className="text-neon">{stats.spins}</span>
+            GIROS <span className="text-sapphire">{stats.spins}</span>
           </span>
           <span
             className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10px] font-extrabold tracking-wide transition-all duration-300 ${
               stats.fullOuts > 0
-                ? "border-gold/60 bg-gold/10 text-gold shadow-[0_0_10px_rgba(255,199,44,0.35)]"
+                ? "border-gold/60 bg-gold/10 text-gold shadow-[0_0_10px_rgba(245,197,66,0.35)]"
                 : "border-white/10 bg-white/5 text-fog"
             }`}
           >
@@ -44,8 +44,8 @@ export default function Scoreboard({ history, stats }: ScoreboardProps) {
       </div>
 
       {visible.length === 0 ? (
-        <div className="rounded-2xl border-[1.5px] border-dashed border-white/15 px-3 py-2 text-center text-xs font-semibold text-white/35">
-          Gire a roleta para ver os resultados no placar
+        <div className="rounded-2xl border-[1.5px] border-dashed border-[rgba(245,197,66,0.2)] px-3 py-2 text-center text-xs font-semibold text-white/35">
+          Gire a roleta para registrar os decretos reais
         </div>
       ) : (
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -57,7 +57,7 @@ export default function Scoreboard({ history, stats }: ScoreboardProps) {
                 i === 0
                   ? r.fullOut
                     ? "history-latest border-gold bg-gold/15 text-gold"
-                    : "history-latest border-neon/60 bg-neon/10 text-neon"
+                    : "history-latest border-sapphire/70 bg-[rgba(30,58,138,0.3)] text-[#bcd0ff]"
                   : "border-white/10 bg-white/5 text-white/70 opacity-75"
               }`}
               style={
@@ -68,7 +68,7 @@ export default function Scoreboard({ history, stats }: ScoreboardProps) {
             >
               <span aria-hidden>{r.icon}</span>
               {r.text}
-              {r.fullOut && <TrophyIcon size={11} strokeWidth={2.8} />}
+              {r.fullOut && <CrownIcon size={11} strokeWidth={2.8} />}
             </span>
           ))}
         </div>

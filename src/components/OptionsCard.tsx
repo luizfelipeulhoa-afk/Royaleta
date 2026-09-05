@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { CheerOption } from "../lib/cheer";
 import { isFullOut, MAX_OPTIONS, MIN_OPTIONS } from "../lib/cheer";
-import { MegaphoneIcon, PlusIcon, XIcon } from "./icons";
+import { CrownIcon, PlusIcon, XIcon } from "./icons";
 
 interface OptionsCardProps {
   options: CheerOption[];
@@ -10,7 +10,7 @@ interface OptionsCardProps {
   onRemove: (index: number) => void;
 }
 
-/** Card de opções de treino: input + chips coloridos da arena. */
+/** Card de rotinas da corte: input + brasões (chips) removíveis. */
 export default function OptionsCard({ options, disabled, onAdd, onRemove }: OptionsCardProps) {
   const [value, setValue] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +30,7 @@ export default function OptionsCard({ options, disabled, onAdd, onRemove }: Opti
     const text = value.trim();
     if (!text) return;
     if (options.length >= MAX_OPTIONS) {
-      showError(`Limite de ${MAX_OPTIONS} rotinas na arena`);
+      showError(`Limite de ${MAX_OPTIONS} rotinas no reinado`);
       return;
     }
     onAdd(text);
@@ -44,10 +44,10 @@ export default function OptionsCard({ options, disabled, onAdd, onRemove }: Opti
   }, [options.length]);
 
   return (
-    <section className="w-full rounded-[22px] border border-white/10 bg-white/5 px-3.5 py-3">
+    <section className="w-full rounded-[22px] border border-[rgba(245,197,66,0.16)] bg-white/5 px-3.5 py-3">
       <div className="font-display mb-2 flex items-center justify-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[1px] text-fog">
-        <MegaphoneIcon size={13} strokeWidth={2.4} />
-        Opções de treino
+        <CrownIcon size={13} strokeWidth={2.4} />
+        Decretos de treino
       </div>
 
       <div className="mb-1.5 flex gap-2">
@@ -61,9 +61,9 @@ export default function OptionsCard({ options, disabled, onAdd, onRemove }: Opti
           onKeyDown={(e) => {
             if (e.key === "Enter") submit();
           }}
-          placeholder="Adicionar nova rotina..."
+          placeholder="Proclamar nova rotina..."
           aria-label="Nova rotina"
-          className="h-10 min-w-0 flex-1 rounded-xl border border-white/15 bg-[rgba(15,23,42,0.7)] px-3 text-[13px] font-semibold text-white outline-none transition-colors duration-150 placeholder:text-white/35 focus:border-neon disabled:opacity-60"
+          className="h-10 min-w-0 flex-1 rounded-xl border border-white/15 bg-[rgba(10,17,40,0.75)] px-3 text-[13px] font-semibold text-white outline-none transition-colors duration-150 placeholder:text-white/35 focus:border-gold disabled:opacity-60"
         />
         <button
           type="button"
@@ -71,14 +71,14 @@ export default function OptionsCard({ options, disabled, onAdd, onRemove }: Opti
           disabled={disabled}
           aria-label="Adicionar rotina"
           title="Adicionar rotina"
-          className="grid h-10 w-10 shrink-0 cursor-pointer place-items-center rounded-xl bg-gradient-to-br from-punch to-grape text-white shadow-[0_4px_12px_rgba(255,42,133,0.4)] transition-all duration-150 hover:brightness-110 active:scale-90 disabled:cursor-not-allowed disabled:opacity-60"
+          className="grid h-10 w-10 shrink-0 cursor-pointer place-items-center rounded-xl bg-gradient-to-br from-[#f9d976] to-[#b8860b] text-[#101d42] shadow-[0_4px_12px_rgba(245,197,66,0.4)] transition-all duration-150 hover:brightness-110 active:scale-90 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          <PlusIcon size={18} strokeWidth={2.6} />
+          <PlusIcon size={18} strokeWidth={2.8} />
         </button>
       </div>
 
       {error && (
-        <p className="mb-1 text-[11px] font-bold text-punch" role="alert">
+        <p className="mb-1 text-[11px] font-bold text-[#ff6b81]" role="alert">
           {error}
         </p>
       )}
@@ -91,8 +91,8 @@ export default function OptionsCard({ options, disabled, onAdd, onRemove }: Opti
               key={`${opt.text}-${idx}`}
               className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-2xl border px-2.5 py-1.5 text-xs font-bold text-white transition-all duration-200 ${
                 fo
-                  ? "border-gold/80 bg-gradient-to-r from-[#603813] to-[#b29f00] shadow-[0_0_10px_rgba(255,199,44,0.5)]"
-                  : "border-white/15 bg-[rgba(30,41,69,0.9)]"
+                  ? "border-gold/80 bg-gradient-to-r from-[#3d2f07] to-[#8a6d0b] shadow-[0_0_10px_rgba(245,197,66,0.5)]"
+                  : "border-[rgba(245,197,66,0.2)] bg-[rgba(13,27,61,0.9)]"
               }`}
             >
               <span
@@ -105,7 +105,7 @@ export default function OptionsCard({ options, disabled, onAdd, onRemove }: Opti
                 type="button"
                 onClick={() => {
                   if (options.length <= MIN_OPTIONS) {
-                    showError("A roleta precisa de pelo menos 2 rotinas!");
+                    showError("A roleta precisa de pelo menos 2 decretos!");
                     return;
                   }
                   onRemove(idx);
@@ -114,7 +114,7 @@ export default function OptionsCard({ options, disabled, onAdd, onRemove }: Opti
                 aria-label={`Remover ${opt.text}`}
                 title="Remover"
                 className={`grid h-4 w-4 shrink-0 cursor-pointer place-items-center rounded-full transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50 ${
-                  fo ? "bg-black/30 text-white hover:bg-[#ff4757]" : "bg-white/15 hover:bg-[#ff4757]"
+                  fo ? "bg-black/30 text-white hover:bg-[#c0392b]" : "bg-white/15 hover:bg-[#c0392b]"
                 }`}
               >
                 <XIcon size={9} strokeWidth={3.2} />
